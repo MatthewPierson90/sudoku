@@ -46,7 +46,7 @@ def print_puzzle(puzzle, length = None):
     if not length:
         length = puzzle.shape[0]
     length_sqrt = np.sqrt(length).astype(np.uint8)
-    row_divider = ''
+    row_divider = '-'
     for n in range(length):
         if n % length_sqrt == 0:
             row_divider += '+'
@@ -54,7 +54,7 @@ def print_puzzle(puzzle, length = None):
         if n == length - 1:
             row_divider += '++\n'
 
-    topbot = ''
+    topbot = '-'
     for n in range(length):
         if n % length_sqrt == 0:
             topbot += '+'
@@ -68,6 +68,8 @@ def print_puzzle(puzzle, length = None):
             puzzle_string += row_divider
         puzzle_string += row_divider
         for col in range(length):
+            if col == 0:
+                puzzle_string += str(row)
             puzzle_string += '|'
             if col % length_sqrt == 0:
                 puzzle_string += '|'
