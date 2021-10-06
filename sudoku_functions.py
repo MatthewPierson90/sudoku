@@ -73,7 +73,7 @@ def print_puzzle(puzzle, length = None):
             puzzle_string += '|'
             if col % length_sqrt == 0:
                 puzzle_string += '|'
-            puzzle_number = puzzle[row,col]
+            puzzle_number = int(puzzle[row,col])
             if puzzle_number == 0:
                 puzzle_string += '   '
             elif puzzle_number < 10:

@@ -230,20 +230,20 @@ if __name__ == '__main__':
     # print_puzzle(test4)
     
     
-    
-    print('test4')
-    toc = tt()
-    solution_one(test4)
-    tic = tt()
-    time1 = tic - toc
-    print('solution 1',tic - toc)
-    
-    toc = tt()
-    brute_force(test4)
-    tic = tt()
-    time_brute = tic- toc
-    print('brute force', time_brute)
-    
+    #
+    # print('test4')
+    # toc = tt()
+    # solution_one(test4)
+    # tic = tt()
+    # time1 = tic - toc
+    # print('solution 1',tic - toc)
+    #
+    # toc = tt()
+    # brute_force(test4)
+    # tic = tt()
+    # time_brute = tic- toc
+    # print('brute force', time_brute)
+    # 
 
     
     print('test3')
@@ -252,10 +252,10 @@ if __name__ == '__main__':
     tic = tt()
     time1 = tic - toc
     print('solution 1',tic - toc)
-    
-    toc = tt()
-    print_puzzle(brute_force(test3))
-    tic = tt()
-    time_brute = tic- toc
-    print('brute force', time_brute)
+    #
+    # toc = tt()
+    # print_puzzle(brute_force(test3))
+    # tic = tt()
+    # time_brute = tic- toc
+    # print('brute force', time_brute)
 
