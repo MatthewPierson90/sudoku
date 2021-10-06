@@ -53,10 +53,18 @@ def print_puzzle(puzzle, length = None):
         row_divider += '+---'
         if n == length - 1:
             row_divider += '++\n'
+
+    topbot = ''
+    for n in range(length):
+        if n % length_sqrt == 0:
+            topbot += '+'
+        topbot += '+-'+str(n)+'-'
+        if n == length - 1:
+            topbot += '++\n'
     puzzle_string = ''
-    
+    puzzle_string += topbot
     for row in range(length):
-        if row % length_sqrt == 0:
+        if row % length_sqrt == 0 and row != 0:
             puzzle_string += row_divider
         puzzle_string += row_divider
         for col in range(length):
@@ -76,7 +84,7 @@ def print_puzzle(puzzle, length = None):
             if col == length - 1:
                 puzzle_string += '||\n'
         if row == length-1:
-            puzzle_string += row_divider*2
+            puzzle_string += row_divider + topbot
     print(puzzle_string)
 
 
