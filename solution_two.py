@@ -1,15 +1,9 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Oct  5 11:58:03 2021
-
-@author: Matthew
-"""
 import numpy as np
 import time
 from copy import deepcopy
-from solutions_one import solution_one
+from solution_one import solution_one
 from sudoku_functions import print_puzzle
-tt = time.time
+tt = time.perf_counter
 
 # noinspection PyShadowingNames,PyUnusedLocal
 def lst_char_len(lst):
@@ -56,7 +50,9 @@ def print_dct_lst(lst):
 
 
 
-def make_initial_value_arrays(puzzle, length, length_sqrt):
+def make_initial_value_arrays(puzzle,
+                              length,
+                              length_sqrt):
     rows = np.zeros((length, length))
     cols = np.zeros((length, length))
     blocks = np.zeros((length, length))
@@ -84,8 +80,6 @@ def make_initial_value_arrays(puzzle, length, length_sqrt):
                     blocks[block_index, index] = 1
     info = {}
     counts = []
-
-    # noinspection PyShadowingNames
     for n in range(length):
         n_rows = []
         n_cols = []
@@ -128,6 +122,28 @@ def make_initial_value_arrays(puzzle, length, length_sqrt):
                 all_spots[n+1, row, col] = 1
     return all_spots, info
 
+
+if __name__ == '__main__':
+    # test = np.array([
+    #         [1, 0, 0, 4],
+    #         [3, 0, 0, 0],
+    #         [0, 0, 4, 0],
+    #         [0, 3, 0, 2],
+    # ])
+    test9 = np.array([
+            [0, 0, 0, 0, 0, 0, 0, 0, 3],
+            [0, 0, 1, 0, 0, 5, 6, 0, 0],
+            [0, 9, 0, 0, 4, 0, 0, 7, 0],
+            [0, 0, 0, 0, 0, 9, 0, 5, 0],
+            [7, 0, 0, 0, 0, 0, 0, 0, 8],
+            [0, 5, 0, 4, 0, 2, 0, 0, 0],
+            [0, 8, 0, 0, 2, 0, 0, 9, 0],
+            [0, 0, 3, 5, 0, 0, 1, 0, 0],
+            [6, 0, 0, 0, 0, 0, 0, 0, 0],
+    ])
+    asp, inf = make_initial_value_arrays(puzzle = test9, length = 9, length_sqrt = 3)
+    print(asp)
+    print_dct(inf)
 
 # noinspection PyUnusedLocal,PyShadowingNames
 def update_all_spots(all_spots, info, length, length_sqrt):
@@ -190,6 +206,7 @@ def update_info(all_spots, info, value, row, col, block, length, length_sqrt):
     block_indices = [(n_row,n_col) for n_row in range(length) for n_col in range(length)
                       if ((length_sqrt * (n_row // length_sqrt) + n_col // length_sqrt == block)
                           and (all_spots[value, n_row, n_col] == 1))]
+
     for n in range(length):
         if all_spots[value, n, col] == 1 and n != row:
             info[value]['available_by_row'][n].remove((n,col))
@@ -287,6 +304,9 @@ def choose_guess(all_spots, info, length):
 
 def update_incorrect_guess(all_spots, info, length, length_sqrt, value, row, col):
     block = length_sqrt * (row // length_sqrt) + col // length_sqrt
+    print('-'*1000)
+    print(value, (row, col))
+    print_dct(info[value])
     info[value]['available_by_row'][row].remove((row, col))
     info[value]['available_by_row_count'][row] -= 1
     info[value]['available_by_col'][col].remove((row, col))
@@ -316,8 +336,12 @@ def check_valid(all_spots, length):
         return 0
 
 
-def solution_two(puzzle, length = None, length_sqrt = None, all_spots = None, info = None, depth = 0):
-    print(depth, 'here1')
+def solution_two(puzzle,
+                 length = None,
+                 length_sqrt = None,
+                 all_spots = None,
+                 info = None,
+                 depth = 0):
     if length is None:
         length = puzzle.shape[0]
         length_sqrt = int(np.sqrt(length))
@@ -326,14 +350,12 @@ def solution_two(puzzle, length = None, length_sqrt = None, all_spots = None, in
 
     all_spots,info = update_all_spots(all_spots, info, length, length_sqrt)
     check_if_valid = check_valid(all_spots, length)
-    print(depth, 'here2')
     if check_if_valid == -1:
         return -1
     elif check_if_valid == 1:
         return all_spots[0]
     while check_if_valid == 0:
         twos_info, min_info = choose_guess(all_spots, info, length)
-        print(depth, 'here3')
         max_twos = twos_info[1]
         all_spots_copy = all_spots.copy()
         info_copy = deepcopy(info)
@@ -341,20 +363,29 @@ def solution_two(puzzle, length = None, length_sqrt = None, all_spots = None, in
             row = twos_info[2][0]
             col = twos_info[2][1]
             value = twos_info[3]
+            if value == 0:
+                print(all_spots)
+                print(all_spots.shape)
+                for n in range(1,length):
+                    if all_spots[n,row,col] != 0:
+                        value = n
+                        break
 
         else:
             row = min_info[1][0]
             col = min_info[1][1]
-            value = min_info[2]
+            value = int(min_info[2])
+            if value == 0:
+                print(all_spots)
+                print(all_spots.shape)
+                for n in range(1,length):
+                    if all_spots[n,row,col] != 0:
+                        value = n
+                        break
+            print('here 2')
+            print(value)
         block = length_sqrt * (row // length_sqrt) + col // length_sqrt
         all_spots_copy[0, row, col] = value
-        print(depth, 'here4')
-        print(row,col,value)
-        print(twos_info)
-        print(min_info)
-        for n in range(length+1):
-            print(n)
-            print_puzzle(all_spots[n])
         all_spots_copy,info_copy = update_info(all_spots_copy,
                                                info_copy,
                                                value,
@@ -363,7 +394,6 @@ def solution_two(puzzle, length = None, length_sqrt = None, all_spots = None, in
                                                block,
                                                length,
                                                length_sqrt)
-        print(depth, 'here5')
         check = solution_two(all_spots_copy[0],length, length_sqrt, all_spots_copy, info_copy,depth+1)
         if np.all(check == -1):
             all_spots, info = update_incorrect_guess(all_spots, info, length, length_sqrt, value, row, col)
@@ -506,71 +536,15 @@ if __name__ == '__main__':
     # print(solution_two(test5))
     # tic = tt()
     # print(tic-toc)
-    allspots1, info1 = make_initial_value_arrays(test6, 9, 3)
-    allspots2, info2 = update_all_spots(allspots1,info1,9,3)
-    twos_info, min_info = choose_guess(allspots2, info2, 9)
-    allspots3 = allspots2.copy()
-    info3 = deepcopy(info2)
-    allspots3[0,3,8] = 3
-    allspots4,info4 = update_info(allspots3,info3,3,3,8,5,9,3)
-    allspots5, info5 = update_all_spots(allspots4, info4, 9, 3)
-    twos_info1, min_info1 = choose_guess(allspots5, info5, 9)
-    toc = tt()
-    print(solution_two(test6))
-    tic = tt()
-    # print(tic-toc)
-    # toc = tt()
-    # print(solution_two(test7))
-    # tic = tt()
-    # print(tic-toc)
-    # toc = tt()
-    # print(solution_two(test8))
-    # tic = tt()
-    # print(tic-toc)
+    # allspots1, info1 = make_initial_value_arrays(test6, 9, 3)
+    # allspots2, info2 = update_all_spots(allspots1,info1,9,3)
+    # twos_info, min_info = choose_guess(allspots2, info2, 9)
+    # allspots3 = allspots2.copy()
+    # info3 = deepcopy(info2)
+    # allspots3[0,3,8] = 3
+    # allspots4,info4 = update_info(allspots3,info3,3,3,8,5,9,3)
+    # allspots5, info5 = update_all_spots(allspots4, info4, 9, 3)
+    # twos_info1, min_info1 = choose_guess(allspots5, info5, 9)
     # toc = tt()
     # print(solution_two(test9))
     # tic = tt()
-    # print(tic-toc)
-    # toc = tt()
-    # print(solution_two(test5))
-    # tic = tt()
-    # print(tic-toc)
-    # print(solution_one(test5) - solution_two(test5))
-    # info= make_initial_available_arrays(test, 4, 2)
-    # toc = tt()
-    # all_spots1, info1 = make_initial_value_arrays(test3, 9, 3)
-    # all_spots1 = all_spots1.astype(int)
-    # a1 = all_spots1.copy()
-    # print_puzzle(all_spots1[0])
-    # print('-'*100,'\n')
-    # print_puzzle(all_spots[1:].sum(axis=0))
-    # for n in range(10):
-    #     print_puzzle(all_spots[n])
-    # all_spots1, info1 = update_all_spots(all_spots1, info1, 9,3)
-    # print_puzzle(all_spots1[0])
-    # print('-'*100,'\n')
-    # print('Changes made')
-    # print_puzzle(all_spots1[0]-a1[0])
-    # print('-'*100,'\n')
-    # print('sums')
-    # print_puzzle(all_spots1[1:].sum(axis=0))
-    # print('-'*100,'\n')
-    # for n in range(10):
-    #     print(n)
-    #     print_puzzle(all_spots1[n])
-    # two_stuff, min_stuff = choose_guess(all_spots1, info1, 9)
-    # test = all_spots1[0].copy()
-    # print_puzzle(test)
-    # test[2,6] = 2
-    # print_puzzle(test)
-    # all_spots2, info2, rows2, cols2, blocks2 = make_initial_value_arrays(test, 9, 3)
-    # all_spots2, info2 = update_all_spots(all_spots2, info2, 9, 3)
-    # print_puzzle(all_spots2[0].astype(int))
-    # print(tt() - toc)
-    # test1 = all_spots1[0].copy()
-    # print_puzzle(test)
-    # test1[4,4] = 6
-    # print_puzzle(test)
-    # all_spots3, info3, rows3, cols3, blocks3 = make_initial_value_arrays(test1, 9, 3)
-    # all_spots3, info3 = update_all_spots(all_spots3, info3, 9, 3)
-    # print(all_spots3[0])

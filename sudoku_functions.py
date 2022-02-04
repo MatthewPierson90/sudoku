@@ -1,11 +1,40 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Oct  4 08:47:15 2021
-
-@author: Matthew
-"""
-
+from datetime import datetime
 import numpy as np
+import time
+
+tt = time.perf_counter
+
+
+def timer(func):
+    def wrap(*args,**kwargs):
+        print('Began at',datetime.now().strftime("%H:%M:%S"),'\n')
+        start = tt()
+        result = func(*args,**kwargs)
+        end = tt()
+        total_time = end-start
+        if total_time > 3600:
+            total_time_in_mins = round(total_time / 60)
+            total_time = round(total_time)
+            hours = int(total_time_in_mins / 60)
+            mins = total_time_in_mins % 60
+            secs = total_time % 60
+            time_string = f'{hours}h, {mins}m, {secs}s'
+        elif total_time > 60:
+            total_time = round(total_time)
+            mins = int(total_time / 60)
+            secs = total_time % 60
+            time_string = f'{mins}m, {secs}s'
+        elif total_time > .1:
+            time_string = '{}s'.format(round(total_time,2))
+        else:
+            if round(total_time*1000) == 0:
+                total_time = round(total_time*1000,2)
+            else:
+                total_time = round(total_time * 1000)
+            time_string = f'{total_time}ms'
+        print('Time elapsed:',time_string,'\n')
+        return result
+    return wrap
 
 
 def make_numbers_letters(number):
@@ -128,10 +157,16 @@ def check_valid(puzzle, length = None):
     return 1, solution
 
 
-import time
-tt = time.time
-
 def brute_force(puzzle, length = None):
+    """
+    Parameters
+    ----------
+    puzzle: np.array
+    length: int, default None
+
+    Returns: int, np.array
+    -------
+    """
     if np.all(length == None):
         length = puzzle.shape[0]
     for n in range(length):
@@ -141,42 +176,41 @@ def brute_force(puzzle, length = None):
                     puzzle_copy = puzzle.copy()
                     puzzle_copy[n,m] = k+1
                     valid, solution = check_valid(puzzle_copy)
-                    # if (tt()-start) - int(tt()-start)<.001:
-                    # print('depth,n,m,value:',depth,n,m,k+1)
-                    # print(puzzle_copy)
                     if valid == 1:
                         if solution == 1:
-                            return puzzle_copy
+                            return 1, puzzle_copy
                         else:
-                            to_return = brute_force(puzzle_copy,length)
-                            if np.all(to_return == -1):
+                            valid, solution = brute_force(puzzle_copy,length)
+                            if valid == -1:
                                 continue
-                            elif check_valid(to_return) == (1,1):
-                                return to_return
-                return -1
-    return -1
+                            elif check_valid(solution) == (1,1):
+                                return 1, solution
+                return -1, puzzle
+    return -1, puzzle
 
-test_tic = tt()
-def test_time(start):
-    while tt()-start<10:
-        if (tt()-start) - int(tt()-start)<.01:
-            print(tt()-start)
+
+
+
+
+
 
 if __name__ == '__main__':
-    # test = np.zeros((9,9)).astype(int)
-    # test2 = np.random.randint(0,9,(9,9))
-    # print(check_valid(test))
-    # print(check_valid(test2))
-    # test3 = np.random.randint(0,4,(4,4))
-    # test4 = np.random.randint(0,16,(16,16))
-    # print_puzzle(test)
-    # print_puzzle(test2)
-    # print_puzzle(test3)
-    # print_puzzle(test4)
+    import time
+    # Valid puzzle
     test = np.array([
             [1, 0, 0, 4],
             [3, 0, 0, 0],
             [0, 0, 4, 0],
             [0, 3, 0, 2],
     ])
-    print(brute_force(test))
+    print(timer(brute_force)(test))
+    print(check_valid(test))
+    # Invalid puzzle
+
+    test = np.array([
+            [1, 0, 4, 4],
+            [3, 0, 0, 0],
+            [0, 0, 4, 0],
+            [0, 3, 0, 2],
+    ])
+    print(timer(brute_force)(test))
