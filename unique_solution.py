@@ -285,19 +285,34 @@ def choose_guess(all_spots, info, length, depth, loop_count):
                     guess_column = col
         return guess_value, guess_row, guess_column
 
+def make_tuple(puzzle):
+    to_return = []
+    if type(puzzle) == tuple:
+        return puzzle
+    for n in range(puzzle.shape[0]):
+        to_return.append(tuple(puzzle[n].astype(np.int8)))
+    to_return = tuple(to_return)
+    return to_return
 
+def solution_unique(puzzle,
 
-def solution_two(puzzle,
-                 length = None,
-                 length_sqrt = None,
-                 all_spots = None,
-                 info = None,
-                 depth = 0,
-                 start = tt(),
-                 time_out = np.inf):
-    # print(depth)
-    if tt() - start >time_out:
+                    length = None,
+                    length_sqrt = None,
+                    all_spots = None,
+                    info = None,
+                    depth = 0,
+                    seen = {},
+                    seen_this_time = [],
+                    start = tt(),
+                    time_out = np.inf):
+    # print(f'    in {tt()-start:.2f}')
+    if tt() - start > time_out:
         raise SolveTimeOut
+    tuple_puzzle = make_tuple(puzzle)
+    if tuple_puzzle in seen.keys():
+        return 1, seen[tuple_puzzle]
+    else:
+        seen_this_time.append(tuple_puzzle)
     if length is None:
         length = puzzle.shape[0]
         length_sqrt = int(np.sqrt(length))
@@ -315,7 +330,7 @@ def solution_two(puzzle,
         return 1, all_spots[0]
     loop_count = 0
     while check_if_valid == 0:
-        if tt() - start > time_out:
+        if tt()-start > time_out:
             raise SolveTimeOut
         loop_count += 1
         value, row, col = choose_guess(all_spots, info, length, depth, loop_count)
@@ -333,7 +348,16 @@ def solution_two(puzzle,
                                                 length_sqrt)
         # print('after update')
         # print(all_spots_copy[0])
-        check, as0 = solution_two(all_spots_copy[0], length, length_sqrt, all_spots_copy, info_copy, depth+1, start, time_out)
+        check, as0 = solution_unique(all_spots_copy[0],
+                                     length,
+                                     length_sqrt,
+                                     all_spots_copy,
+                                     info_copy,
+                                     depth+1,
+                                     seen,
+                                     seen_this_time,
+                                     start = start,
+                                     time_out = time_out)
         if check == -1:
             all_spots, info = update_incorrect_guess(all_spots, info, length, length_sqrt, value, row, col)
         else:
@@ -346,14 +370,69 @@ def solution_two(puzzle,
         return 1, all_spots[0]
 
 
+def check_unique(puzzle, time_out = np.inf, start = tt()):
+    length = puzzle.shape[1]
+    length_sqrt = int(length**.5)
+    all_spots, info, valid = make_initial_value_arrays(puzzle,
+                                                       length,
+                                                       length_sqrt)
+    all_available = []
+    for value in range(1,length):
+        for (row,col) in info[value]['available']:
+            all_available.append((value, row, col))
+    seen = {}
+    solution_exists = make_tuple(np.ones((length,length)))
+    solutions = [solution_exists]
+    solution_doesnt_exist = make_tuple(np.zeros((length,length)))
+    count = 0
+    # print('-'*20)
+    for (value, row,col) in all_available:
+
+        # print(f'OUT {tt()-start:.2f}')
+        if tt()-start > time_out:
+            raise SolveTimeOut
+        seen_this_time = []
+        puzzle_copy = puzzle.copy()
+        puzzle_copy[row,col] = value
+        valid, sol = solution_unique(puzzle_copy,
+                                     seen = seen,
+                                     seen_this_time = seen_this_time,
+                                     start = start,
+                                     time_out = time_out)
+        # count += 1
+        # # print(sol)
+        # if count%1 == 0:
+        #     print(f'Completed {count}/{len(all_available)}')
+        #     print(f'Time Elapsed: {tt()-start:.2f}')
+        if valid == -1 or 0 in sol or 0 in sol[0]:
+            for item in seen_this_time:
+                seen[item] = solution_doesnt_exist
+        elif make_tuple(sol) in solutions or len(solutions) == 1:
+            if len(solutions) == 1:
+                solutions.append(make_tuple(sol))
+            for item in seen_this_time:
+                seen[item] = solution_exists
+        else:
+            solutions.append(sol)
+            # print(np.array(solutions))
+            return 0
+    if len(solutions) == 1:
+        return -1
+    return 1
+
+
+
+
 if __name__ == '__main__':
 
     test = np.array([
-            [1, 0, 0, 4],
-            [3, 0, 0, 0],
-            [0, 0, 4, 0],
-            [0, 3, 0, 2],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
     ])
+
+
     test1 = np.array([
             [0, 4, 0, 1, 0, 0, 0, 3, 5],
             [0, 0, 0, 6, 7, 8, 2, 1, 0],
@@ -388,6 +467,7 @@ if __name__ == '__main__':
             [0, 1, 0, 3, 0, 0, 0, 2, 0],
             [6, 0, 0, 9, 0, 4, 0, 0, 7],
     ])
+
     test4 = np.array([
             [4, 0, 0, 0, 0, 1, 0, 3, 0],
             [0, 0, 5, 0, 0, 8, 0, 7, 0],
@@ -482,15 +562,68 @@ if __name__ == '__main__':
             [0, 4, 0, 0, 0, 3, 7, 0, 0],
             [9, 0, 5, 0, 0, 0, 6, 2, 0],
     ])
+    test11 = np.array([
+            [0, 0, 0, 0, 0, 0, 0, 0, 3],
+            [0, 0, 1, 0, 0, 5, 6, 0, 0],
+            [0, 9, 0, 0, 4, 0, 0, 7, 0],
+            [0, 0, 0, 0, 0, 9, 0, 5, 0],
+            [7, 0, 0, 0, 0, 0, 0, 0, 8],
+            [0, 5, 0, 4, 0, 2, 0, 0, 0],
+            [0, 8, 0, 0, 2, 0, 0, 9, 0],
+            [0, 0, 3, 5, 0, 0, 1, 0, 0],
+            [6, 0, 0, 0, 0, 0, 0, 0, 0],
+    ])
+
+    for n in range(9):
+        for m in range(9):
+            if test5[n,m] != 0:
+                print('\n')
+                print('-'*20)
+                print(f'(value, row, col): {test5[n,m]},{n},{m}')
+                test = test5.copy()
+                test[n,m] = 0
+                start = tt()
+                unique = check_unique(test, time_out = np.inf)
+                end = tt()
+                if unique == 0:
+                    ustr = 'Not unique'
+                else:
+                    ustr = 'Unique'
+                print(f'Time: {end - start: .2f}')
+                print(ustr)
+
+
+
+
+
+    # print('\n'*2,'-'*20)
+    # print(5)
+    # print(check_unique(test5, start = tt(), time_out = np.inf))
+    # print('\n'*2,'-'*20)
     # print(6)
-    all, info, valid = make_initial_value_arrays(puzzle = test5,
-                              length = 9,
-                              length_sqrt = 3)
-    count = 0
-    for value in range(1,10):
-        count += len(info[value]['available'])
-        print(info[value]['available'])
-    print(count)
+    # print(check_unique(test6, start = tt(), time_out = np.inf))
+    # print('\n'*2,'-'*20)
+    # print(7)
+    # print(check_unique(test7, start = tt(), time_out = np.inf))
+    # print('\n'*2,'-'*20)
+    # print(8)
+    # print(check_unique(test8, start = tt(), time_out = np.inf))
+    # print('\n'*2,'-'*20)
+    # print(9)
+    # print(check_unique(test9, start = tt(), time_out = np.inf))
+    # print('\n'*2,'-'*20)
+    # print(10)
+    # print(check_unique(test10, start = tt(), time_out = np.inf))
+
+    # print(6)
+    # all, info, valid = make_initial_value_arrays(puzzle = test5,
+    #                           length = 9,
+    #                           length_sqrt = 3)
+    # count = 0
+    # for value in range(1,10):
+    #     count += len(info[value]['available'])
+    #     print(info[value]['available'])
+    # print(count)
     # print(info['available'])
     # print_dct(info)
     #

@@ -1,7 +1,10 @@
 import tkinter as tk
 import numpy as np
-from sudoku_functions import check_valid
+from sudoku_functions import check_valid, SolveTimeOut, tt
 from gui_puzzle_solution import Solution_pop_up
+from gui_save_load_puzzle import Save_load_pop_up
+from unique_solution import check_unique
+
 
 
 class sudoku(tk.Tk):
@@ -13,19 +16,33 @@ class sudoku(tk.Tk):
         self.intro_screen()
         self.make_menu()
         self.puzzle_made = False
+        self.current_state = 0
+        self.solution_time_out = 1.
+
 
     def make_menu(self):
-        menu = tk.Menu(self)
+        menu = tk.Menu(self, tearoff=False)
         self.config(menu = menu)
-        filemenu = tk.Menu(menu)
-        menu.add_cascade(label = 'Files', menu = filemenu)
-        filemenu.add_command(label = 'New Puzzle')
-        filemenu.add_command(label = 'Load Puzzle')
-        filemenu.add_command(label = 'Save Puzzle')
+        file_menu = tk.Menu(menu, tearoff=False)
+        menu.add_cascade(label = 'Menu', menu = file_menu)
+        file_menu.add_separator()
+        file_menu.add_separator()
+        file_menu.add_command(label = 'Solver Time Limit', command = self.set_time_limit)
+        file_menu.add_separator()
+        file_menu.add_separator()
+        file_menu.add_command(label = 'Save Puzzle', command = self.save_puzzle_state)
+        file_menu.add_separator()
+        file_menu.add_separator()
+        file_menu.add_command(label = 'Main Menu', command = lambda: self.intro_screen(True))
+
 
     def intro_screen(self, from_back = False):
+        self.current_state = 1
         if from_back:
-            self.select_frame.destroy()
+            # self.select_frame.destroy()
+            for widget in self.winfo_children():
+                if type(widget) != tk.Menu:
+                    widget.destroy()
         self.intro_frame = tk.Frame(self)
         self.intro_frame.pack(fill=tk.BOTH, expand=True)
         new = tk.Button(self.intro_frame,
@@ -37,10 +54,11 @@ class sudoku(tk.Tk):
         load = tk.Button(self.intro_frame,
                          text = 'Load Puzzle',
                          width = 25,
-                         command = self.select_grid_size
+                         command = self.load_puzzle_state
                          ).pack(fill=tk.BOTH, expand=True)
 
     def select_grid_size(self):
+        self.current_state = 2
         self.intro_frame.destroy()
         self.select_frame = tk.Frame(self)
         self.select_frame.pack(fill = tk.BOTH, expand=True)
@@ -58,11 +76,11 @@ class sudoku(tk.Tk):
                        command = lambda : self.make_setup_gird(9)
                        ).pack(fill = tk.BOTH, expand=True)
 
-        s16 = tk.Button(self.select_frame,
-                        text = '16x16',
-                        width = 25,
-                        command = lambda : self.make_setup_gird(16)
-                        ).pack(fill = tk.BOTH, expand=True)
+        # s16 = tk.Button(self.select_frame,
+        #                 text = '16x16',
+        #                 width = 25,
+        #                 command = lambda : self.make_setup_gird(16)
+        #                 ).pack(fill = tk.BOTH, expand=True)
 
         back = tk.Button(self.select_frame,
                          text = 'Back',
@@ -72,6 +90,7 @@ class sudoku(tk.Tk):
 
 
     def make_setup_gird(self, size):
+        self.current_state = 3
         self.select_frame.destroy()
         self.game_frame = tk.Frame(self)
         self.game_frame.pack(fill = tk.BOTH, expand=True)
@@ -79,13 +98,37 @@ class sudoku(tk.Tk):
         self.sqrt_size = int(size ** .5)
         message_frame = tk.Frame(self.game_frame)
         message_frame.pack(pady=10)
-        message = tk.Label(message_frame, text = 'Enter given numbers. When finished, press set:').pack()
+        message = tk.Label(message_frame,
+                           text = 'Enter given numbers. When finished, press set:').pack()
         self.entry_frame = tk.Canvas(self.game_frame, bg = 'white')
         self.entry_frame.pack(fill = tk.BOTH, expand=True)
         set_frame = tk.Frame(self.game_frame)
-        set_frame.pack(pady=10)
-        set_button = tk.Button(set_frame, text = 'Set', width = 10, command = lambda : self.set_press())
-        set_button.pack()
+        set_frame.pack(pady=10, fill = 'x')
+        set_button = tk.Button(set_frame,
+                               text = 'Set Puzzle',
+                               width = 10,
+                               command = lambda : self.set_press())
+        # set_button.pack(side = 'left', fill = 'x', expand = True)
+        set_button.grid(row = 0, column = 1, sticky = 'NSEW')
+
+        check_unique_button = tk.Button(set_frame,
+                                        text = 'Check Uniqueness',
+                                        width = 10,
+                                        command = lambda : self.check_uniqueness())
+        # check_unique_button.pack(side = 'left', fill = 'x', expand = True)
+        uniqueness_time_limit_label = tk.Label(set_frame,text = 'Check for uniqueness\n time limit (seconds):')
+        uniqueness_time_limit_label.grid(row = 0, column = 2, padx = 20, sticky = 'NSEW')
+        uniqueness_time_limit_entry = tk.Entry(set_frame, width = 2)
+        self.uniqueness_time_limit_var = tk.StringVar(uniqueness_time_limit_entry)
+        self.uniqueness_time_limit_var.set(str(10.0))
+        uniqueness_time_limit_entry.config(textvariable = self.uniqueness_time_limit_var)
+        uniqueness_time_limit_entry.grid(row = 0, column = 3, sticky = 'NSEW')
+        check_unique_button.grid(row = 0, column = 4, padx = 20, sticky = 'NSEW')
+        set_frame.columnconfigure(0, weight = 1)
+        set_frame.columnconfigure(1, weight = 2)
+        set_frame.columnconfigure(2, weight = 3)
+        set_frame.columnconfigure(3, weight = 1)
+        set_frame.columnconfigure(4, weight = 4)
         self.var_list = []
         for n in range(0,size):
             self.var_list.append([])
@@ -173,72 +216,83 @@ class sudoku(tk.Tk):
                  widget.config(font = ('DejaVu Sans',fs))
 
     def set_press(self):
-        n = 0
-        for row in self.var_list:
-            m=0
-            for var in row:
-                self.update_game_board(var.get(),n,m)
-                m += 1
-            n += 1
-        # print(self.game_board)
-        valid,_ = check_valid(self.game_board[0])
-        if valid:
-            self.make_game_board()
+        invalid_entry = self.update_game_board(from_board_setup = True)
+        if invalid_entry:
+            invalid_puzzle = tk.Tk()
+            invalid_puzzle.geometry('350x100')
+            invalid_puzzle.geometry(f'+{self.winfo_rootx()+200}+{self.winfo_rooty()+200}')
+            invalid_puzzle.title('Invalid!')
+            time_out_message = tk.Label(invalid_puzzle,
+                                        text = 'You have an invalid entry!!',
+                                        font = ('DejaVu Sans', 12))
+            time_out_message.pack(fill = 'both', expand = True)
         else:
-            pass
+            valid_puzzle, _ = check_valid(self.game_board[0])
+            if valid_puzzle:
+                self.make_game_board()
+            else:
+                invalid_puzzle = tk.Tk()
+                invalid_puzzle.geometry('350x100')
+                invalid_puzzle.geometry(f'+{self.winfo_rootx()+200}+{self.winfo_rooty()+200}')
+                invalid_puzzle.title('Invalid!')
+                time_out_message = tk.Label(invalid_puzzle,
+                                            text = 'Puzzle Invalid!',
+                                            font = ('DejaVu Sans', 12))
+                time_out_message.pack(fill = 'both', expand = True)
 
-    def update_game_board(self, x, n, m, from_board_setup = True):
+    def update_game_board(self, from_board_setup = True):
         board = self.game_board
+        invalid_entry = False
+        for n in range(self.game_board.shape[1]):
+            for m in range(self.game_board.shape[1]):
+                x = self.var_list[n][m].get()
+                x = x.lower()
+                if x == '':
+                    board[0, n, m] = 0
+                else:
+                    if self.sqrt_size == 2:
+                        if x in '1 2 3 4' and x != ' ':
+                            board[0, n, m] = int(x)
+                        else:
+                            invalid_entry = True
+                    elif self.sqrt_size == 3:
+                        if x in '1 2 3 4 5 6 7 8 9' and x != ' ':
+                            board[0, n, m] = int(x)
+                        else:
+                            invalid_entry = True
+                    elif self.sqrt_size == 4:
+                        if x == 'a':
+                            board[0, n, m] = 10
+                        elif x == 'b':
+                            board[0, n, m] = 11
+                        elif x == 'c':
+                            board[0, n, m] = 12
+                        elif x == 'd':
+                            board[0, n, m] = 13
+                        elif x == 'e':
+                            board[0, n, m] = 14
+                        elif x == 'f':
+                            board[0, n, m] = 15
+                        elif x == 'g':
+                            board[0, n, m] = 16
+                        elif x in '1 2 3 4 5 6 7 8 9' and x != ' ':
+                            board[0, n, m] = int(x)
+                        else:
+                            invalid_entry = True
+
         if from_board_setup:
-            in_game_entry = 0
-        else:
-            in_game_entry = 1
-        x = x.lower()
-        if x == '':
-            board[0, n, m] = 0
-        else:
-            if self.sqrt_size == 2:
-                if x in '1 2 3 4' and x != ' ':
-                    board[0, n, m] = int(x)
-                    board[1, n, m] = in_game_entry
-                else:
-                    pass
-            elif self.sqrt_size == 3:
-                if x in '1 2 3 4 5 6 7 8 9' and x != ' ':
-                    board[0, n, m] = int(x)
-                    board[1, n, m] = in_game_entry
-                else:
-                    pass
-            elif self.sqrt_size == 4:
-                if x == 'a':
-                    board[0, n, m] = 10
-                    board[1, n, m] = in_game_entry
-                elif x == 'b':
-                    board[0, n, m] = 11
-                    board[1, n, m] = in_game_entry
-                elif x == 'c':
-                    board[0, n, m] = 12
-                    board[1, n, m] = in_game_entry
-                elif x == 'd':
-                    board[0, n, m] = 13
-                    board[1, n, m] = in_game_entry
-                elif x == 'e':
-                    board[0, n, m] = 14
-                    board[1, n, m] = in_game_entry
-                elif x == 'f':
-                    board[0, n, m] = 15
-                    board[1, n, m] = in_game_entry
-                elif x == 'g':
-                    board[0, n, m] = 16
-                    board[1, n, m] = in_game_entry
-                elif x in '1 2 3 4 5 6 7 8 9' and x != ' ':
-                    board[0, n, m] = int(x)
-                    board[1, n, m] = in_game_entry
-                else:
-                    pass
+            self.game_board[1,self.game_board[0] == 0] = 1
+        return invalid_entry
+
+
+
 
     def make_game_board(self):
-        self.game_frame.destroy()
+        self.current_state = 4
+
+        for widget in self.winfo_children():
+            if type(widget) != tk.Menu:
+                widget.destroy()
         self.game_frame = tk.Frame(self)
         self.game_frame.pack(fill = tk.BOTH, expand = True)
         self.entry_frame = tk.Canvas(self.game_frame, bg = 'white')
@@ -284,7 +338,7 @@ class sudoku(tk.Tk):
                              ).grid(row = 2*n+1,
                                     column = 2*m+1,
                                     sticky = tk.N+tk.S+tk.E+tk.W)
-                else:
+                elif self.game_board[1, n, m] == 0:
                     tk.Label(self.entry_frame,
                              width = 1,
                              justify = tk.CENTER,
@@ -294,6 +348,19 @@ class sudoku(tk.Tk):
                              bd = 0).grid(row = 2*n+1,
                                           column = 2*m+1,
                                           sticky = tk.N+tk.S+tk.E+tk.W)
+                elif self.game_board[1, n, m] == 1:
+                    tk.Entry(self.entry_frame,
+                             width = 1,
+                             justify = tk.CENTER,
+                             font = ('DejaVu Sans', 16),
+                             bd = 0,
+                             selectborderwidth = 0,
+                             relief = 'flat',
+                             textvariable = self.var_list[n][m]
+                             ).grid(row = 2*n+1,
+                                    column = 2*m+1,
+                                    sticky = tk.N+tk.S+tk.E+tk.W)
+                    self.var_list[n][m].set(self.game_board[0, n, m])
         self.vlines = []
         self.hlines = []
         ef_height = self.entry_frame.winfo_height()
@@ -328,76 +395,197 @@ class sudoku(tk.Tk):
 
     def valid_press(self):
         n = 0
-        for row in self.var_list:
-            m = 0
-            for var in row:
-                self.update_game_board(var.get(), n, m, from_board_setup = False)
-                m += 1
-            n += 1
-        is_valid, sol = check_valid(self.game_board[0].astype(int))
-
-        if is_valid:
-            print('Valid')
+        invalid_entry = self.update_game_board(from_board_setup = False)
+        if invalid_entry:
+            invalid_puzzle = tk.Tk()
+            invalid_puzzle.geometry('350x100')
+            invalid_puzzle.geometry(f'+{self.winfo_rootx()+200}+{self.winfo_rooty()+200}')
+            invalid_puzzle.title('Solver Timeout')
+            time_out_message = tk.Label(invalid_puzzle,
+                                        text = 'You have an invalid entry!!',
+                                        font = ('DejaVu Sans', 12))
+            time_out_message.pack(fill = 'both', expand = True)
         else:
-            print('BAD BAD BAD')
+            is_valid, sol = check_valid(self.game_board[0].astype(int))
+            valid_window = tk.Tk()
+            valid_window.title('Is it valid?!')
+            valid_window.geometry('300x50')
+            valid_window.geometry(f'+{self.winfo_rootx()+200}+{self.winfo_rooty()+200}')
+            if is_valid:
+                tk.Label(valid_window, text = 'Currently Valid!').pack(expand = True, fill = 'both')
+            else:
+                tk.Label(valid_window, text = 'Puzzle Invalid, Logic error!').pack(expand = True, fill = 'both')
 
 
     def brute_press(self):
-        n = 0
-        for row in self.var_list:
-            m = 0
-            for var in row:
-                self.update_game_board(var.get(), n, m, from_board_setup = False)
-                m += 1
-            n += 1
+        self.update_game_board(from_board_setup = False)
         is_valid, sol = check_valid(self.game_board[0].astype(int))
         if is_valid:
             game_board_copy = self.game_board[0].astype(int)
         else:
             game_board_copy = self.game_board[0]*(1-self.game_board[1])
-        Solution_pop_up(game_board_copy, 'Smart Brute Force', self.sqrt_size)
+        Solution_pop_up(game_board = game_board_copy,
+                        alg_name = 'Smart Brute Force',
+                        sqrt_size = self.sqrt_size,
+                        window_x = self.winfo_rootx(),
+                        window_y = self.winfo_rooty(),
+                        time_out = self.solution_time_out)
 
     def alg1_press(self):
         n = 0
-        for row in self.var_list:
-            m = 0
-            for var in row:
-                self.update_game_board(var.get(), n, m, from_board_setup = False)
-                m += 1
-            n += 1
+        self.update_game_board(False)
         is_valid, sol = check_valid(self.game_board[0].astype(int))
         if is_valid:
             game_board_copy = self.game_board[0].astype(int)
         else:
             game_board_copy = self.game_board[0]*(1-self.game_board[1])
             game_board_copy  = game_board_copy.astype(int)
-        Solution_pop_up(game_board_copy, 'Algorithm 1', self.sqrt_size)
+            game_board, alg_name, sqrt_size, window_x, window_y, time_out = 2
+        Solution_pop_up(game_board = game_board_copy,
+                        alg_name = 'Algorithm 1',
+                        sqrt_size = self.sqrt_size,
+                        window_x = self.winfo_rootx(),
+                        window_y = self.winfo_rooty(),
+                        time_out = self.solution_time_out)
+
 
     def alg2_press(self):
-        n = 0
-        for row in self.var_list:
-            m = 0
-            for var in row:
-                self.update_game_board(var.get(), n, m, from_board_setup = False)
-                m += 1
-            n += 1
+        self.update_game_board(from_board_setup = False)
         is_valid, sol = check_valid(self.game_board[0].astype(int))
         if is_valid:
             game_board_copy = self.game_board[0].astype(int)
         else:
             game_board_copy = self.game_board[0]*(1-self.game_board[1])
             game_board_copy = game_board_copy.astype(int)
-        Solution_pop_up(game_board_copy, 'Algorithm 2', self.sqrt_size)
+        Solution_pop_up(game_board = game_board_copy,
+                        alg_name = 'Algorithm 2',
+                        sqrt_size = self.sqrt_size,
+                        window_x = self.winfo_rootx(),
+                        window_y = self.winfo_rooty(),
+                        time_out = self.solution_time_out)
 
     def save_puzzle_state(self):
-        pass
+        if self.current_state == 4:
+            self.update_game_board(False)
+            Save_load_pop_up(save_or_load='Save',
+                             window_x=self.winfo_rootx(),
+                             window_y=self.winfo_rooty(),
+                             game_board=self.game_board)
+        else:
+            cant_save_yet = tk.Tk()
+            cant_save_yet.geometry('300x50')
+            cant_save_yet.geometry(f'+{self.winfo_rootx()+200}+{self.winfo_rooty()+200}')
+            cant_save_yet.title('Save Error')
+            cant_save_message = tk.Label(cant_save_yet,
+                                         text='Can\'t Save until puzzle is set!',
+                                         font=('DejaVu Sans', 12))
+            cant_save_message.pack(fill='both', expand = True)
 
     def load_puzzle_state(self):
-        pass
+        self.load_from = Save_load_pop_up(save_or_load='Load',
+                                     window_x=self.winfo_rootx(),
+                                     window_y=self.winfo_rooty())
+        self.load_from.bind('<Destroy>', self.load_destroy)
 
-    def new_puzzle_state(self):
-        pass
+    def load_destroy(self,event):
+        if self.load_from.loaded and not event.widget.master:
+            self.game_board = self.load_from.game_board
+            # print(self.game_board)
+            self.game_board = self.game_board.astype(int)
+            # print(self.game_board.shape)
+            self.sqrt_size = int(self.game_board.shape[1]**.5)
+            self.var_list = []
+            for n in range(self.game_board.shape[1]):
+                self.var_list.append([])
+                for m in range(self.game_board.shape[1]):
+                    var = tk.StringVar()
+                    if self.game_board[0,n,m] != 0:
+                        var.set(self.game_board[0,n,m])
+                    self.var_list[-1].append(var)
+            self.make_game_board()
 
+    def set_time_limit(self):
+        self.set_time_limit_window = tk.Tk()
+        self.set_time_limit_window.geometry('400x150')
+        self.set_time_limit_window.geometry(f'+{self.winfo_rootx()+200}+{self.winfo_rooty()+200}')
+        self.set_time_limit_window.title('Save Error')
+        self.set_time_limit_window_message = tk.Label(self.set_time_limit_window,
+                                     text = f'Current solver time limit: {self.solution_time_out} seconds.\nEnter new limit below.',
+                                     font = ('DejaVu Sans', 12))
+        self.set_time_limit_window_message.pack(fill = 'x', expand = True)
+        limit_entry_frame = tk.Frame(self.set_time_limit_window)
+        limit_entry_frame.pack(fill = 'both', expand = True)
+        tk.Label(limit_entry_frame, text = '  ').pack(side = 'bottom', fill = 'x')
+        tk.Label(limit_entry_frame, text = '  ').pack(side = 'left')
+        tk.Label(limit_entry_frame, text = '  ').pack(side = 'right')
+        limit_entry = tk.Entry(limit_entry_frame, justify = 'right',width = 4, font = ('DejaVu Sans',16))
+        self.time_var = tk.StringVar(limit_entry)
+        limit_entry.config(textvariable = self.time_var)
+        limit_entry.pack(side = 'left',fill = 'both', expand = True)
+        limit_button = tk.Button(limit_entry_frame, width = 4,text = 'Set limit', command = self.set_limit_press)
+        limit_button.pack(side = 'right',fill = 'both', expand = True)
+
+
+    def set_limit_press(self):
+        try:
+            self.solution_time_out = float(self.time_var.get())
+            self.set_time_limit_window.destroy()
+        except ValueError:
+            self.set_time_limit_window.destroy()
+
+    def check_uniqueness(self):
+        invalid_entry = self.update_game_board(from_board_setup = True)
+        if invalid_entry:
+            invalid_puzzle = tk.Tk()
+            invalid_puzzle.geometry('350x100')
+            invalid_puzzle.geometry(f'+{self.winfo_rootx()+200}+{self.winfo_rooty()+200}')
+            invalid_puzzle.title('Invalid!')
+            time_out_message = tk.Label(invalid_puzzle,
+                                        text = 'You have an invalid entry!!',
+                                        font = ('DejaVu Sans', 12))
+            time_out_message.pack(fill = 'both', expand = True)
+        else:
+            valid_puzzle, _ = check_valid(self.game_board[0])
+            if valid_puzzle:
+                unique_puzzle = tk.Tk()
+                unique_puzzle.geometry('350x100')
+                unique_puzzle.geometry(f'+{self.winfo_rootx()+200}+{self.winfo_rooty()+200}')
+                unique_puzzle.title('Puzzle Unique?')
+                try:
+                    # print(float(self.uniqueness_time_limit_var.get()))
+                    start = tt()
+                    is_unique = check_unique(self.game_board[0],
+                                             time_out = float(self.uniqueness_time_limit_var.get()),
+                                             start = start)
+                    if is_unique == 0:
+                        unique_message = tk.Label(unique_puzzle,
+                                                  text = 'Puzzle has multiple solutions!',
+                                                  font = ('DejaVu Sans', 12))
+                        unique_message.pack(fill = 'both', expand = True)
+                    elif is_unique == 1:
+                        unique_message = tk.Label(unique_puzzle,
+                                                  text = 'Puzzle has a unique solution!!',
+                                                  font = ('DejaVu Sans', 12))
+                        unique_message.pack(fill = 'both', expand = True)
+                    elif is_unique == -1:
+                        unique_message = tk.Label(unique_puzzle,
+                                                  text = 'Puzzle has no solution!!',
+                                                  font = ('DejaVu Sans', 12))
+                        unique_message.pack(fill = 'both', expand = True)
+                except SolveTimeOut:
+                    unique_message = tk.Label(unique_puzzle,
+                                              text = 'Uniqueness solver timed out!!',
+                                              font = ('DejaVu Sans', 12))
+                    unique_message.pack(fill = 'both', expand = True)
+            else:
+                invalid_puzzle = tk.Tk()
+                invalid_puzzle.geometry('350x100')
+                invalid_puzzle.geometry(f'+{self.winfo_rootx()+200}+{self.winfo_rooty()+200}')
+                invalid_puzzle.title('Invalid!')
+                time_out_message = tk.Label(invalid_puzzle,
+                                            text = 'Puzzle Invalid!',
+                                            font = ('DejaVu Sans', 12))
+                time_out_message.pack(fill = 'both', expand = True)
 
 
 if __name__ == '__main__':

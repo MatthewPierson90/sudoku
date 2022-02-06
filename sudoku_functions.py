@@ -4,6 +4,10 @@ import time
 
 tt = time.perf_counter
 
+class SolveTimeOut(Exception):
+    """To stop a solver that is taking too long"""
+    pass
+
 
 def timer(func):
     def wrap(*args,**kwargs):
@@ -157,7 +161,10 @@ def check_valid(puzzle, length = None):
     return 1, solution
 
 
-def brute_force(puzzle, length = None):
+def brute_force(puzzle,
+                length = None,
+                start = tt(),
+                time_out = np.inf):
     """
     Parameters
     ----------
@@ -173,6 +180,8 @@ def brute_force(puzzle, length = None):
         for m in range(length):
             if puzzle[n,m] == 0:
                 for k in range(length):
+                    if tt()-start > time_out:
+                        raise SolveTimeOut
                     puzzle_copy = puzzle.copy()
                     puzzle_copy[n,m] = k+1
                     valid, solution = check_valid(puzzle_copy)
@@ -180,7 +189,7 @@ def brute_force(puzzle, length = None):
                         if solution == 1:
                             return 1, puzzle_copy
                         else:
-                            valid, solution = brute_force(puzzle_copy,length)
+                            valid, solution = brute_force(puzzle_copy,length, start, time_out)
                             if valid == -1:
                                 continue
                             elif check_valid(solution) == (1,1):

@@ -1,4 +1,4 @@
-from sudoku_functions import print_puzzle, check_valid, brute_force, timer
+from sudoku_functions import timer, tt, SolveTimeOut
 import numpy as np
 
 
@@ -57,7 +57,11 @@ def solution_one(puzzle,
                  available_array = -1*np.ones((9,9,10)),
                  rows = -1*np.ones((9,9)),
                  cols = -1*np.ones((9,9)),
-                 blocks = -1*np.ones((9,9))):
+                 blocks = -1*np.ones((9,9)),
+                 start = tt(),
+                 time_out = np.inf):
+    if tt() - start > time_out:
+        raise SolveTimeOut
     if length != puzzle.shape[0]:
         length = int(puzzle.shape[0])
         length_sqrt = int(puzzle.shape[0]**.5)
@@ -74,6 +78,8 @@ def solution_one(puzzle,
         return -1, puzzle
     max_row, max_col = np.unravel_index(np.argmax(available_array[:,:,0], axis=None), available_array[:,:,0].shape)
     for value in range(len(available_array[max_row,max_col,1:])):
+        if tt() - start > time_out:
+            raise SolveTimeOut
         if available_array[max_row,max_col,1:][value] > 0:
             continue
         else:
@@ -103,7 +109,9 @@ def solution_one(puzzle,
                                                available_array = new_available_array,
                                                rows = new_rows,
                                                cols = new_cols,
-                                               blocks = new_blocks)
+                                               blocks = new_blocks,
+                                               start = start,
+                                               time_out = time_out)
                if valid == -1:
                    continue
                else:

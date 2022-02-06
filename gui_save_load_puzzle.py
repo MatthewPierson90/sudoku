@@ -7,7 +7,7 @@ class Save_load_pop_up(tk.Tk):
         super().__init__()
         self.title(f'{save_or_load} file')
         self.geometry("300x300")
-        self.geometry(f'+{window_x}+{window_y}')
+        self.geometry(f'+{window_x+100}+{window_y}')
         self.saved_games = os.listdir('saved_games')
         self.saved_games.sort()
         self.save_or_load = save_or_load
@@ -15,6 +15,8 @@ class Save_load_pop_up(tk.Tk):
             self.game_board = game_board
             self.save()
         else:
+            self.loaded = False
+            self.game_board = np.zeros((2,4,4))
             self.load()
 
     def save(self):
@@ -38,7 +40,6 @@ class Save_load_pop_up(tk.Tk):
         files_scroll_bar = tk.Scrollbar(list_frame)
         files_scroll_bar.pack(side = tk.RIGHT, fill = tk.Y)
         list_in_use = tk.Listbox(list_frame, yscrollcommand = files_scroll_bar.set)
-        self.saved_games += [f'file{n}.npy' for n in range(100)]
         for file_name in self.saved_games:
             list_in_use.insert(tk.END,file_name[:-4])
         list_in_use.pack(side = tk.LEFT, fill = tk.BOTH, expand = True)
@@ -60,6 +61,8 @@ class Save_load_pop_up(tk.Tk):
         self.file_name.set(value)
         if self.save_or_load == 'Save':
             self.save_press(from_save_pop_up = False)
+        else:
+            self.load_press()
 
     def save_press(self, from_save_pop_up = False):
         file_name = self.file_name.get()
@@ -93,13 +96,42 @@ class Save_load_pop_up(tk.Tk):
                 np.save(f'saved_games/{file_name}', self.game_board)
                 self.destroy()
 
-
-
-
-
-
     def load(self):
-        pass
+        self.load_frame = tk.Frame(self)
+        self.load_frame.pack(fill = 'both', expand = True)
+        select_message = tk.Label(self.load_frame,font = ('DejaVu Sans',12), text = 'Select a File:')
+        select_message.pack(fill = 'x')
+        tk.Label(self.load_frame, text = '').pack(fill = 'x')
+        list_frame = tk.Frame(self.load_frame)
+        tk.Label(list_frame, text = '').pack(side = 'left', padx = 10)
+        tk.Label(list_frame, text = '').pack(side = 'right', padx = 10)
+        list_frame.pack(fill = 'both', expand = True)
+        files_scroll_bar = tk.Scrollbar(list_frame)
+        files_scroll_bar.pack(side = tk.RIGHT, fill = tk.Y)
+        list_in_use = tk.Listbox(list_frame, yscrollcommand = files_scroll_bar.set)
+        for file_name in self.saved_games:
+            list_in_use.insert(tk.END, file_name[:-4])
+        list_in_use.pack(side = tk.LEFT, fill = tk.BOTH, expand = True)
+        tk.Label(self.load_frame, text = '').pack(fill = 'x')
+        files_scroll_bar.config(command = list_in_use.yview)
+        list_in_use.bind('<<ListboxSelect>>', self.list_box_single_press)
+        list_in_use.bind('<Double-Button-1>', self.list_box_double_press)
+        enter_frame = tk.Frame(self.load_frame)
+        enter_frame.pack(fill = 'x')
+        current_selection_message = tk.Label(enter_frame, text = 'Selected:')
+        current_selection_message.pack(fill = 'x', side = 'left')
+        self.file_name = tk.StringVar(self.load_frame)
+        selection_name = tk.Entry(enter_frame, textvariable = self.file_name)
+        selection_name.pack(padx = 5, fill = 'x', expand = True, side = 'left')
+        load_button = tk.Button(enter_frame, width = 10, text = 'Load', command = lambda:self.load_press())
+        load_button.pack(fill = 'x', side = 'right')
+        tk.Label(self.load_frame, text = '').pack(fill = 'x')
+
+    def load_press(self):
+        file_name = self.file_name.get()
+        self.game_board = np.load(f'saved_games/{file_name}.npy')
+        self.loaded = True
+        self.destroy()
 
 if __name__ == '__main__':
     easy = np.array([
@@ -116,5 +148,5 @@ if __name__ == '__main__':
     to_save = np.zeros((2, 9, 9))
 
     to_save[0] = easy
-    test = Save_load_pop_up('Save',window_x = 2500, window_y = 300, game_board = to_save)
+    test = Save_load_pop_up('Load',window_x = 2500, window_y = 300, game_board = to_save)
     test.mainloop()
