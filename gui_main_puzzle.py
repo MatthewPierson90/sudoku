@@ -62,7 +62,7 @@ class sudoku(tk.Tk):
         self.intro_frame.destroy()
         self.select_frame = tk.Frame(self)
         self.select_frame.pack(fill = tk.BOTH, expand = True)
-        message = tk.Label(self.select_frame, text = 'Select puzzle size:').pack(fill = tk.BOTH, expand = True)
+        message = tk.Label(self.select_frame, text = 'Select puzzle:').pack(fill = tk.BOTH, expand = True)
 
         easy = tk.Button(self.select_frame,
                        text = 'Easy',
