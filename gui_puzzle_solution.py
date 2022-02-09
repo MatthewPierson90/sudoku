@@ -2,7 +2,7 @@ import numpy as np
 import tkinter as tk
 from sudoku_functions import check_valid, brute_force
 from solution_one import solution_one
-from solution_two_simple import solution_two
+from solution_two import solution_two
 from time import perf_counter as tt
 
 class Solution_pop_up(tk.Tk):

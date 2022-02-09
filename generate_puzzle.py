@@ -2,8 +2,13 @@ import numpy as np
 from copy import deepcopy
 from sudoku_functions import print_puzzle, timer, SolveTimeOut, tt
 from unique_solution import check_unique, check_valid, make_initial_value_arrays
-from solution_two_simple import solution_two
+from solution_two import solution_two
 
+"""
+This algorithm relies heavily on solution two and Unique solution.  It begins by randomly filling in 10 to 20 values,
+solves the resulting puzzle with solution two, and then randomly removes values from the puzzle while a unique solution 
+is still guaranteed.  It often results in easy/ mostly filled in puzzles, and could really use som work/ more thought. 
+"""
 
 def get_all_available(puzzle, length, length_sqrt):
     all_spots, info, valid = make_initial_value_arrays(puzzle,

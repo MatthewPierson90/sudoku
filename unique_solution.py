@@ -2,6 +2,13 @@ import numpy as np
 from copy import deepcopy
 from sudoku_functions import print_puzzle, timer, SolveTimeOut, tt
 
+"""
+This algorithm relies heavily on solution two. As a first step, it determines all of the current possible moves.
+It then makes each of those moves and uses solution two to solve the puzzle. It is a dynamic programming algorithm, 
+it stores every puzzle state that it sees in a dictionary, and checks if the current puzzle state has been seen. 
+If the algorithm finds two solutions it breaks, otherwise it checks all of the initial possible moves. 
+"""
+
 
 def make_initial_value_arrays(puzzle,
                               length,
