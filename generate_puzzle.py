@@ -20,7 +20,10 @@ def generate_puzzle(length):
     length_sqrt = int(length**.5)
     not_done = True
     count = 0
-    num_to_add = 20
+    if length == 9:
+        num_to_add = np.random.randint(10,20)
+    else:
+        num_to_add = 1
     while not_done:
         count += 1
         all_available = get_all_available(puzzle, length, length_sqrt)
@@ -36,26 +39,28 @@ def generate_puzzle(length):
         try:
             start = tt()
             valid, puzzle = solution_two(puzzle_copy,
-                                         length = None,
-                                         length_sqrt = None,
-                                         all_spots = None,
-                                         info = None,
-                                         depth = 0,
                                          start = start,
                                          time_out = .5)
             if valid == 1:
                 not_done = False
             else:
                 puzzle = np.zeros((length, length), dtype = np.int8)
-                num_to_add = 20
+                if length == 9:
+                    num_to_add = 20
+                else:
+                    num_to_add = 1
         except SolveTimeOut:
             puzzle = np.zeros((length, length), dtype = np.int8)
-            num_to_add = 20
+            if length == 9:
+                num_to_add = 20
+            else:
+                num_to_add = 1
     used = []
     not_done = True
     while not_done:
-        row = np.random.randint(9)
-        col = np.random.randint(9)
+        row = np.random.randint(length)
+        col = np.random.randint(length)
+
         if (row,col) in used:
             continue
         else:

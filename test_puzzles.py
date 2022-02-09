@@ -16,7 +16,8 @@ to_save = np.ones((2,9,9))
 to_save[0] = easy
 to_save[1,to_save[0] > 0] = 0
 
-np.save('saved_games/easy', to_save)
+easy = to_save.copy()
+# np.save('saved_games/easy', to_save)
 
 #medium
 med = np.array([
@@ -34,7 +35,9 @@ to_save = np.zeros((2,9,9))
 
 to_save[0] = med
 to_save[1,to_save[0] > 0] = 0
-np.save('saved_games/medium', to_save)
+
+medium = to_save.copy()
+# np.save('saved_games/medium', to_save)
 
 #hard
 hard = np.array([
@@ -54,7 +57,7 @@ to_save[0] = hard
 to_save[1,to_save[0] > 0] = 0
 np.save('saved_games/hard', to_save)
 
-
+hard = to_save.copy()
 
 #evil
 
@@ -73,7 +76,9 @@ to_save = np.zeros((2,9,9))
 
 to_save[0] = evil1
 to_save[1,to_save[0] > 0] = 0
-np.save('saved_games/evil1', to_save)
+
+evil1= to_save.copy()
+# np.save('saved_games/evil1', to_save)
 
 
 evil2 = np.array([
@@ -91,7 +96,7 @@ to_save = np.zeros((2,9,9))
 
 to_save[0] = evil2
 to_save[1,to_save[0] > 0] = 0
-np.save('saved_games/evil2', to_save)
+# np.save('saved_games/evil2', to_save)
 
 evil3 = np.array([
                 [1, 2, 0, 4, 0, 0, 3, 0, 0],
@@ -108,7 +113,9 @@ to_save = np.zeros((2,9,9))
 
 to_save[0] = evil3
 to_save[1,to_save[0] > 0] = 0
-np.save('saved_games/evil3', to_save)
+
+evil2= to_save.copy()
+# np.save('saved_games/evil3', to_save)
 
 
 evil4 = np.array([
@@ -126,7 +133,9 @@ to_save = np.zeros((2,9,9))
 
 to_save[0] = evil4
 to_save[1,to_save[0] > 0] = 0
-np.save('saved_games/evil4', to_save)
+
+evil3 = to_save.copy()
+# np.save('saved_games/evil4', to_save)
 
 
 evil5 = np.array([
@@ -144,7 +153,9 @@ to_save = np.zeros((2,9,9))
 
 to_save[0] = evil5
 to_save[1,to_save[0] > 0] = 0
-np.save('saved_games/evil5', to_save)
+
+evil4 = to_save.copy()
+# np.save('saved_games/evil5', to_save)
 
 
 
@@ -163,7 +174,8 @@ to_save = np.zeros((2,9,9))
 
 to_save[0] = evil6
 to_save[1,to_save[0] > 0] = 0
-np.save('saved_games/evil6', to_save)
+evil5 = to_save.copy()
+# np.save('saved_games/evil6', to_save)
 
 
 #mostly solved

@@ -3,6 +3,23 @@ from copy import deepcopy
 from sudoku_functions import print_puzzle, timer, SolveTimeOut, tt
 
 
+"""
+Solution/ Algorithm Two maintains a dictionary called info and a (length,length,length) 
+np.array as well as a puzzle copy, saved in a (length+1,length,length) np.array called all_spots, the board copy is in 
+spot [0,:,:].  I will call all_spots[i,:,:] the ith value array. 
+The ith value arrays correspond to all of the available places that the slice index i can occur
+in the puzzle.  So all_spots[3,:,:] will have a 1 wherever a 3 can occur in the puzzle, and it has a 0 wherever a 3 can not
+occur in a puzzle. These spots are determined by where there are currently known numbers, 
+and all of the places 3 currently exists.  So for example if there is a 3 in row 0,column 1, then all_spots([3,0,:]) = 0
+all_spots[3,:,1] = 0, and all of the other spots in block 0 are 0.
+Because the blocks are annoying to deal with, all of this information is similarly stored in 
+the dictionary info. This is currently inefficient, and will have to come back for it.
+
+The algorithm then looks at row sums for each ith value arrays
+"""
+
+
+
 def make_initial_value_arrays(puzzle,
                               length,
                               length_sqrt):
@@ -347,7 +364,6 @@ def solution_two(puzzle,
 
 
 if __name__ == '__main__':
-
     test = np.array([
             [1, 0, 0, 4],
             [3, 0, 0, 0],

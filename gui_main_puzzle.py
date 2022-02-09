@@ -2,10 +2,10 @@ import tkinter as tk
 import numpy as np
 from sudoku_functions import check_valid, SolveTimeOut, tt
 from gui_puzzle_solution import Solution_pop_up
-from gui_save_load_puzzle import Save_load_pop_up
+# from gui_save_load_puzzle import Save_load_pop_up
 from unique_solution import check_unique
-
-
+from premade_puzzles import Premade_puzzles
+from generate_puzzle import generate_puzzle
 
 class sudoku(tk.Tk):
     def __init__(self):
@@ -18,6 +18,8 @@ class sudoku(tk.Tk):
         self.puzzle_made = False
         self.current_state = 0
         self.solution_time_out = 1.
+        self.premade_puzzles = Premade_puzzles()
+
 
 
     def make_menu(self):
@@ -30,16 +32,12 @@ class sudoku(tk.Tk):
         file_menu.add_command(label = 'Solver Time Limit', command = self.set_time_limit)
         file_menu.add_separator()
         file_menu.add_separator()
-        file_menu.add_command(label = 'Save Puzzle', command = self.save_puzzle_state)
-        file_menu.add_separator()
-        file_menu.add_separator()
         file_menu.add_command(label = 'Main Menu', command = lambda: self.intro_screen(True))
 
 
     def intro_screen(self, from_back = False):
         self.current_state = 1
         if from_back:
-            # self.select_frame.destroy()
             for widget in self.winfo_children():
                 if type(widget) != tk.Menu:
                     widget.destroy()
@@ -51,15 +49,95 @@ class sudoku(tk.Tk):
                         width = 25,
                         command = self.select_grid_size
                         ).pack(fill=tk.BOTH, expand=True)
-        load = tk.Button(self.intro_frame,
-                         text = 'Load Puzzle',
+        premade = tk.Button(self.intro_frame,
+                        text = 'Pre-made Puzzles',
+                        font = ('DejaVu Sans', 10),
+                        width = 25,
+                        command = self.select_premade_puzzle
+                        ).pack(fill = tk.BOTH, expand = True)
+
+        
+    def select_premade_puzzle(self):
+        self.current_state = 2
+        self.intro_frame.destroy()
+        self.select_frame = tk.Frame(self)
+        self.select_frame.pack(fill = tk.BOTH, expand = True)
+        message = tk.Label(self.select_frame, text = 'Select puzzle size:').pack(fill = tk.BOTH, expand = True)
+
+        easy = tk.Button(self.select_frame,
+                       text = 'Easy',
+                       width = 25,
+                       command = lambda:self.premade_button_press(self.premade_puzzles.easy)
+                       ).pack(fill = tk.BOTH, expand = True)
+
+        med = tk.Button(self.select_frame,
+                       text = 'Medium',
+                       width = 25,
+                       command = lambda:self.premade_button_press(self.premade_puzzles.medium)
+                       ).pack(fill = tk.BOTH, expand = True)
+        hard = tk.Button(self.select_frame,
+                       text = 'Hard',
+                       width = 25,
+                       command = lambda:self.premade_button_press(self.premade_puzzles.hard)
+                       ).pack(fill = tk.BOTH, expand = True)
+
+        evil1 = tk.Button(self.select_frame,
+                       text = 'Evil 1',
+                       width = 25,
+                       command = lambda:self.premade_button_press(self.premade_puzzles.evil1)
+                       ).pack(fill = tk.BOTH, expand = True)
+        evil2 = tk.Button(self.select_frame,
+                       text = 'Evil 2',
+                       width = 25,
+                       command = lambda:self.premade_button_press(self.premade_puzzles.evil2)
+                       ).pack(fill = tk.BOTH, expand = True)
+
+        evil3 = tk.Button(self.select_frame,
+                       text = 'Evil 3',
+                       width = 25,
+                       command = lambda:self.premade_button_press(self.premade_puzzles.evil3)
+                       ).pack(fill = tk.BOTH, expand = True)
+        evil4 = tk.Button(self.select_frame,
+                          text = 'Evil 4',
+                          width = 25,
+                          command = lambda:self.premade_button_press(self.premade_puzzles.evil4)
+                          ).pack(fill = tk.BOTH, expand = True)
+        evil5 = tk.Button(self.select_frame,
+                          text = 'Evil 5',
+                          width = 25,
+                          command = lambda:self.premade_button_press(self.premade_puzzles.evil5)
+                          ).pack(fill = tk.BOTH, expand = True)
+
+        evil6 = tk.Button(self.select_frame,
+                          text = 'Evil 6',
+                          width = 25,
+                          command = lambda:self.premade_button_press(self.premade_puzzles.evil6)
+                          ).pack(fill = tk.BOTH, expand = True)
+
+        back = tk.Button(self.select_frame,
+                         text = 'Back',
                          width = 25,
-                         command = self.load_puzzle_state
-                         ).pack(fill=tk.BOTH, expand=True)
+                         command = lambda:self.intro_screen(True)
+                         ).pack(fill = tk.BOTH, expand = True)
+
+    def premade_button_press(self, puzzle):
+        self.game_board = puzzle
+        self.sqrt_size = int(self.game_board.shape[1] ** .5)
+        self.var_list = []
+        for n in range(self.game_board.shape[1]):
+            self.var_list.append([])
+            for m in range(self.game_board.shape[1]):
+                var = tk.StringVar()
+                if self.game_board[0, n, m] != 0:
+                    var.set(self.game_board[0, n, m])
+                self.var_list[-1].append(var)
+        self.make_game_board()
 
     def select_grid_size(self):
         self.current_state = 2
-        self.intro_frame.destroy()
+        for widget in self.winfo_children():
+            if type(widget) != tk.Menu:
+                widget.destroy()
         self.select_frame = tk.Frame(self)
         self.select_frame.pack(fill = tk.BOTH, expand=True)
         message = tk.Label(self.select_frame, text = 'Select puzzle size:').pack(fill = tk.BOTH, expand=True)
@@ -67,31 +145,57 @@ class sudoku(tk.Tk):
         s4 = tk.Button(self.select_frame,
                        text = '4x4',
                        width = 25,
-                       command = lambda : self.make_setup_gird(4)
+                       command = lambda : self.generate_or_enter_frame(4)
                        ).pack(fill = tk.BOTH, expand=True)
 
         s9 = tk.Button(self.select_frame,
                        text = '9x9',
                        width = 25,
-                       command = lambda : self.make_setup_gird(9)
+                       command = lambda : self.generate_or_enter_frame(9)
                        ).pack(fill = tk.BOTH, expand=True)
-
-        # s16 = tk.Button(self.select_frame,
-        #                 text = '16x16',
-        #                 width = 25,
-        #                 command = lambda : self.make_setup_gird(16)
-        #                 ).pack(fill = tk.BOTH, expand=True)
 
         back = tk.Button(self.select_frame,
                          text = 'Back',
                          width = 25,
                          command = lambda :self.intro_screen(True)
                          ).pack(fill = tk.BOTH, expand=True)
+    
+    def generate_or_enter_frame(self, grid_size):
+        self.current_state = 6
+        for widget in self.winfo_children():
+            if type(widget) != tk.Menu:
+                widget.destroy()
+        self.generate_or_enter = tk.Frame(self)
+        self.generate_or_enter.pack(fill=tk.BOTH, expand=True)
+        enter = tk.Button(self.generate_or_enter,
+                        text = 'Enter Values',
+                        font = ('DejaVu Sans',10),
+                        width = 25,
+                        command = lambda : self.make_setup_gird(grid_size)
+                        ).pack(fill=tk.BOTH, expand=True)
+        generate = tk.Button(self.generate_or_enter,
+                        text = 'Generate Random \n(This may take a moment)',
+                        font = ('DejaVu Sans', 10),
+                        width = 25,
+                        command = lambda: self.generate_button_press(grid_size)
+                        ).pack(fill = tk.BOTH, expand = True)
+        back = tk.Button(self.generate_or_enter,
+                         text = 'Back',
+                         width = 25,
+                         command = lambda:self.select_grid_size()
+                         ).pack(fill = tk.BOTH, expand = True)
 
+    def generate_button_press(self, grid_size):
+        puzzle = np.zeros((2,grid_size,grid_size), dtype = np.int8)
+        puzzle[0] = generate_puzzle(grid_size)
+        puzzle[1, puzzle[0] > 0] = 0
+        self.premade_button_press(puzzle)
 
     def make_setup_gird(self, size):
         self.current_state = 3
-        self.select_frame.destroy()
+        for widget in self.winfo_children():
+            if type(widget) != tk.Menu:
+                widget.destroy()
         self.game_frame = tk.Frame(self)
         self.game_frame.pack(fill = tk.BOTH, expand=True)
         self.game_board = np.zeros((2,size,size), dtype = int)
@@ -440,7 +544,6 @@ class sudoku(tk.Tk):
         else:
             game_board_copy = self.game_board[0]*(1-self.game_board[1])
             game_board_copy  = game_board_copy.astype(int)
-            game_board, alg_name, sqrt_size, window_x, window_y, time_out = 2
         Solution_pop_up(game_board = game_board_copy,
                         alg_name = 'Algorithm 1',
                         sqrt_size = self.sqrt_size,
@@ -463,46 +566,6 @@ class sudoku(tk.Tk):
                         window_x = self.winfo_rootx(),
                         window_y = self.winfo_rooty(),
                         time_out = self.solution_time_out)
-
-    def save_puzzle_state(self):
-        if self.current_state == 4:
-            self.update_game_board(False)
-            Save_load_pop_up(save_or_load='Save',
-                             window_x=self.winfo_rootx(),
-                             window_y=self.winfo_rooty(),
-                             game_board=self.game_board)
-        else:
-            cant_save_yet = tk.Tk()
-            cant_save_yet.geometry('300x50')
-            cant_save_yet.geometry(f'+{self.winfo_rootx()+200}+{self.winfo_rooty()+200}')
-            cant_save_yet.title('Save Error')
-            cant_save_message = tk.Label(cant_save_yet,
-                                         text='Can\'t Save until puzzle is set!',
-                                         font=('DejaVu Sans', 12))
-            cant_save_message.pack(fill='both', expand = True)
-
-    def load_puzzle_state(self):
-        self.load_from = Save_load_pop_up(save_or_load='Load',
-                                     window_x=self.winfo_rootx(),
-                                     window_y=self.winfo_rooty())
-        self.load_from.bind('<Destroy>', self.load_destroy)
-
-    def load_destroy(self,event):
-        if self.load_from.loaded and not event.widget.master:
-            self.game_board = self.load_from.game_board
-            # print(self.game_board)
-            self.game_board = self.game_board.astype(int)
-            # print(self.game_board.shape)
-            self.sqrt_size = int(self.game_board.shape[1]**.5)
-            self.var_list = []
-            for n in range(self.game_board.shape[1]):
-                self.var_list.append([])
-                for m in range(self.game_board.shape[1]):
-                    var = tk.StringVar()
-                    if self.game_board[0,n,m] != 0:
-                        var.set(self.game_board[0,n,m])
-                    self.var_list[-1].append(var)
-            self.make_game_board()
 
     def set_time_limit(self):
         self.set_time_limit_window = tk.Tk()
@@ -592,17 +655,3 @@ if __name__ == '__main__':
     s = sudoku()
     s.mainloop()
 
-# window = tk.Tk()
-#
-# window.title('Sudoku')
-#
-# grid_size = tk.IntVar(value = 0)
-#
-# tk.Radiobutton(window, text = ' 9x9 ', variable = grid_size, value = 9).grid(row = 2, sticky = tk.W)
-# tk.Radiobutton(window, text = '16x16', variable = grid_size, value = 16).grid(row = 3, sticky = tk.W)
-#
-# if grid_size.get() != 0:
-#     tk.Label(window, text = f'{grid_size}x{grid_size}').grid(row = 4)
-#
-#
-# window.mainloop()

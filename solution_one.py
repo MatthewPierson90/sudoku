@@ -2,6 +2,17 @@ from sudoku_functions import timer, tt, SolveTimeOut
 import numpy as np
 
 
+"""
+Solution/ Algorithm one maintains a set/list, called available, for each empty spot in the puzzle. 
+The set/list is found by taking the union of the numbers in use in the same row, column, and block as the spot, 
+call this union unavailable.  The available numbers that can go in the spot is the set 
+difference between [1,...,length] and unavailable. So available = [1,...,length] - unavailable.  The algorithm chooses
+the spot with the minimum available list, makes a copy of the board and fills in one of the available numbers in the 
+copy, and recursively calls the algorithm on the copy.  If a contradiction is reached, a -1 is returned in the 
+0th output place, and the puzzle copy is returned in the 1st output place.  If a solution is found, a 1 is returned in 
+the 0th output place, and the solution is returned in the 1st output place.
+"""
+
 def make_initial_available_arrays(puzzle, length, length_sqrt):
     available_array = np.zeros((length, length, length+1))
     rows = np.zeros((length, length))
